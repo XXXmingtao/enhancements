@@ -15,6 +15,7 @@ public:
 
     //Check if tile contains in BST
     bool contains(const Tile tile) const;
+    bool contains(std::shared_ptr<Tile_Node> node, const Tile tile) const;
 
     //Add tile in BST
     void add(const Tile tile);
@@ -23,6 +24,8 @@ public:
     //Display out all tiles in BST in order
     void dfs() const;
     void dfs(std::shared_ptr<Tile_Node> node) const;
+
+    char convertToChar(Tile tile) const;
 
 private:
     std::shared_ptr<Tile_Node> root;
