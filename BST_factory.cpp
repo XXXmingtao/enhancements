@@ -83,6 +83,26 @@ void BST_factory::dfs(std::shared_ptr<Tile_Node> node) const {
     }
 }
 
+std::shared_ptr<Tile_Node> BST_factory::find(const Tile tile) {
+    return find(root, tile);
+}
+
+std::shared_ptr<Tile_Node> BST_factory::find(std::shared_ptr<Tile_Node> node, const Tile tile) {
+    std::shared_ptr<Tile_Node> returnNode;
+
+    if(node != nullptr) {
+
+        if(tile < node->tile) {
+            returnNode = find(node->left, tile);
+        } else {
+            returnNode = find(node->right, tile);
+        }
+
+    }
+
+    return returnNode;
+}
+
 char BST_factory::convertToChar(Tile tile) const{
     char charTile = N;
     if(tile == RED){

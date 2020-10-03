@@ -25,6 +25,13 @@ public:
     void dfs() const;
     void dfs(std::shared_ptr<Tile_Node> node) const;
 
+    //Find certain tiles in BST
+    std::shared_ptr<Tile_Node> find(const Tile tile);
+    std::shared_ptr<Tile_Node> find(std::shared_ptr<Tile_Node> node, const Tile tile);
+
+    //Remove tile from BST
+    
+
     char convertToChar(Tile tile) const;
 
 private:
