@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <random>
+#include <algorithm>
+
 
 class GameEngine{
 public:
@@ -19,7 +22,7 @@ public:
     ~GameEngine();
 
     // Initialize factories and tile bags
-    void initGame(bool testMode, std::string* fileName);
+    void initGame(bool testMode, std::string* fileName, int seed);
     // reset factories
     void resetFactories();
     // Perform the tile-taking stage for each player in turn until no factories have tiles.
@@ -44,6 +47,7 @@ public:
 private:
     std::vector<Player*> players;
     std::vector<Factory*> factories;
+    std::vector<Tile> boxLid;
     TileBag* tileBag;
     unsigned int factoryIndex;
     Tile tile;
@@ -54,6 +58,7 @@ private:
     unsigned int loadLine;
     bool loadMode;
     bool testMode;
+    int seedNum;
 
     // Tile-taking stage, take one type of tiles from one factory, the rest of tiles will be sent to the centre factory.
     std::vector<Tile> takeTiles(unsigned int factoryIndex, Tile tile);
@@ -77,6 +82,9 @@ private:
     void initPlayers();
     // Check whether the loading is complete
     void checkLoad();
+    // Shuffle the tile bag
+    template <class T>
+    T shuffledTileBag(T tiles, int seed);
 };
 
 #endif // GAME_ENGINE

@@ -5,6 +5,7 @@ GameEngine::GameEngine(){
     inputList = new std::vector<std::string>;
     loadList = new std::vector<std::string>;
     loadLine = 0;
+    seedNum = 0;
 }
 
 GameEngine::~GameEngine(){
@@ -24,9 +25,9 @@ GameEngine::~GameEngine(){
     delete loadList;
 }
 
-void GameEngine::initGame(bool testMode, std::string* fileName){
+void GameEngine::initGame(bool testMode, std::string* fileName, int seed){
     std::string inputLine;
-
+    seedNum = seed;
     // Setting mode
     this->testMode = testMode;
 
@@ -57,14 +58,13 @@ void GameEngine::initGame(bool testMode, std::string* fileName){
     for(int i = 0; i != DEFAULT_FACTORIES; ++i){
         factories.push_back(new Factory());
     }
-
     // Set factories
     resetFactories();
 }
 
 void GameEngine::resetFactories(){
     factories[0]->addTile(FIRST_PLAYER);
-    
+     
     for(unsigned int factoryIndex = 1; factoryIndex != factories.size(); ++factoryIndex){
         for(int i = 0; i != TILES_IN_FACTORY; ++i){
             factories[factoryIndex]->addTile(tileBag->get(0));
@@ -163,6 +163,15 @@ void GameEngine::endRound(){
             std::cout<<"Score for Player "<<player->getName()<<": "<<player->getScore()<<std::endl;
             std::cout<<std::endl;   
         }
+    }
+    if(tileBag->size() == 0 && seedNum > 0) {
+        std::cout << "refill tile bag processing..." << std::endl;
+        std::vector<Tile> randomizedBoxLid = shuffledTileBag(boxLid, seedNum);
+        for(Tile tile : randomizedBoxLid){
+            tileBag->addBack(tile);
+        }
+        std::cout << "refill completed!" << std::endl;
+        std::cout << "Tilebag size: " << tileBag->size() << std::endl;
     }
 }
 
@@ -323,10 +332,22 @@ void GameEngine::updateScore(Player* player){
 }
 
 void GameEngine::recycleTiles(Player* player){
+    std::cout << "seed is+++++++++++++++: " << seedNum << std::endl;
     std::vector<Tile> abandonList = player->getMosaic()->getAbandonList();
+    std::cout << "Tiles recycled: ";
     for(Tile abandonTile:abandonList){
-        tileBag->addBack(abandonTile);
+        if(seedNum > 0) {
+            boxLid.push_back(abandonTile);
+        }
+        else {
+            tileBag->addBack(abandonTile);
+        }
+        std::cout << convertToChar(abandonTile);
+        
+        
     }
+    std::cout << std::endl;
+    std::cout << "recycle complete, box lid has: " << boxLid.size() << " tiles" << std::endl;
 }
 
 void GameEngine::processInput(Player* player){
@@ -471,9 +492,33 @@ void GameEngine::initTileBag(){
 
     // Load tile bag
     if(!loadList->empty()){
-        tiles = (*loadList)[0];
-        ++loadLine;
-    } else {
+        if((*loadList)[0].substr(0, 1) == "#") {
+            try {
+                seedNum = std::stoi((*loadList)[0].substr(1, (*loadList)[0].length()-1));
+                if(seedNum == 0) {
+                  throw std::invalid_argument("Invalid seed has been found, seed cannot be negative number, string or 0");
+                }
+            }
+            catch(std::exception& e) {
+                throw std::invalid_argument("Invalid seed has been found, seed cannot be negative number, string or 0");
+            }
+
+            if(seedNum > 0) {
+                std::string RandomTilesInLoad = DEFAULT_TILE_BAG;
+                tiles = shuffledTileBag(RandomTilesInLoad, seedNum);
+                ++loadLine;
+            }
+        }
+        else {
+            tiles = (*loadList)[0];
+            ++loadLine;
+        }
+    }
+    else if(seedNum > 0) {
+        std::string randomList = DEFAULT_TILE_BAG;
+        tiles = shuffledTileBag(randomList, seedNum);
+    }
+    else {
         tiles = DEFAULT_TILE_BAG;
     }
 
@@ -497,7 +542,13 @@ void GameEngine::initTileBag(){
     }
     
     // Save tile bag
-    inputList->push_back(tiles);    
+    if(seedNum > 0) {
+        std::string saveSeed = std::to_string(seedNum);
+        inputList->push_back("#"+saveSeed);
+    }
+    else {
+        inputList->push_back(tiles);
+    }
 }
 
 void GameEngine::initPlayers(){
@@ -538,4 +589,10 @@ void GameEngine::checkLoad(){
         std::cout<<"Azul game successfully loaded"<<std::endl;
         std::cout<<std::endl;
     }
+}
+
+template <class T>
+T GameEngine::shuffledTileBag(T tiles, int seed) {
+    shuffle(tiles.begin(), tiles.end(), std::default_random_engine(seed));
+    return tiles;
 }

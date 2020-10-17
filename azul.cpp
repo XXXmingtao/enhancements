@@ -20,6 +20,7 @@ GameEngine* gameEngine;
 int playersCount;
 int firstPlayer;
 int choice;
+int seedNum = 0;
 bool testMode;
 
 int main(int argc, char** argv){
@@ -30,6 +31,25 @@ int main(int argc, char** argv){
 		std::string fileName = argv[argc-1];
 		testMode = true;
 		testGame(fileName);
+	}
+
+	//Enable randomness
+	else if(argc == COMMAND_TEST_LENGTH && std::string(argv[1])==COMMAND_RANDOMNESS) {
+		std::string seed(argv[argc-1]);
+
+		try {
+			seedNum = std::stoi(seed);
+			testMode = false;
+			if(seedNum <= 0) {
+				throw std::invalid_argument("Invalid Input - Seed cannot be string, negative number or 0");
+			}
+			else {
+				displayMenu();
+			}
+		}
+		catch(std::exception& e) {
+			std::cout << "Invalid Input - Seed cannot be string, negative number or 0" << std::endl;
+		}
 	}
 
 	// Normal mode
@@ -52,7 +72,14 @@ void displayMenu() {
 	std::cout<<std::endl;   
 	std::cout<<"Menu"<<std::endl;
 	std::cout<<"----"<<std::endl;
-	std::cout<<"1.New Game"<<std::endl;
+	std::cout<<"1.New Game";
+	if(seedNum > 0) {
+		std::cout << " (Randomness On) ";
+	}
+	else {
+		std::cout << " (Randomness off) ";
+	}
+	std::cout << std::endl;
 	std::cout<<"2.Load Game"<<std::endl;
 	std::cout<<"3.Credits (Show student information)"<<std::endl;
 	std::cout<<"4.Quit"<<std::endl;
@@ -71,10 +98,10 @@ void newGame() {
 	firstPlayer = 0;
 
 	// Initialize the game
-	gameEngine->initGame(testMode,nullptr);
+	gameEngine->initGame(testMode, nullptr, seedNum);
 	std::cout<<std::endl;
 	std::cout <<"Let's Play!"<< std::endl;
-	std::cout<<std::endl;   
+	std::cout<<std::endl;
 
 	// Start game round
 	roundPlay(testMode);
@@ -97,7 +124,7 @@ void loadGame() {
 				std::cout<<"Good Bye"<<std::endl;
 				exit(0);
 			}
-			gameEngine->initGame(testMode,&fileName);
+			gameEngine->initGame(testMode, &fileName, seedNum);
 
 			// Start game round
 			roundPlay(testMode);
@@ -173,8 +200,8 @@ void roundPlay(bool testMode){
 		firstPlayer = gameEngine->startTurn(firstPlayer);
 
 		// Update game status
-		gameContinue = (!testMode && gameRound < DEFAULT_ROUND);
-		testContinue = (testMode && gameRound < DEFAULT_ROUND && gameEngine->isTesting());
+		gameContinue = (!testMode && gameRound < 20);
+		testContinue = (testMode && gameRound < 20 && gameEngine->isTesting());
 
 		// Wall-tiling phase, Score-update phase, Factory-reset phase, unless finish testing
 		if(!gameEngine->hasTiles()){
@@ -190,7 +217,7 @@ void testGame(std::string fileName){
 	firstPlayer = 0;
 
 	try{
-		gameEngine->initGame(true,&fileName);
+		gameEngine->initGame(true,&fileName, 0);
 		roundPlay(testMode);
 		
 		// Print result
