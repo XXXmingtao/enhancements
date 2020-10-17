@@ -13,14 +13,12 @@ Mosaic::~Mosaic(){
 
 void Mosaic::setPattern(std::vector<Tile> tiles, unsigned int patternRow){
     for(Tile tile:tiles){
-        if(tile==FIRST_PLAYER || patternRow == BROKEN_LINE ||!pattern->placeTile(tile,patternRow)){
-            if(floor.size()>=FLOOR_SIZE){
+        if(tile==FIRST_PLAYER || patternRow == BROKEN_LINE || !pattern->placeTile(tile,patternRow)){
+            if(tile!=FIRST_PLAYER){
                 abandonList.push_back(tile);
-            } else {
+            }
+            if(floor.size()<FLOOR_SIZE){
                 floor.push_back(tile);
-                 if(patternRow == BROKEN_LINE) {
-                    abandonList.push_back(tile);
-                }
             }
         }
     }

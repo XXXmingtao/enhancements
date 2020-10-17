@@ -20,7 +20,7 @@ GameEngine* gameEngine;
 int playersCount;
 int firstPlayer;
 int choice;
-int seedNum = 0;
+unsigned int seedNum = 0;
 bool testMode;
 
 int main(int argc, char** argv){
@@ -128,6 +128,7 @@ void loadGame() {
 
 			// Start game round
 			roundPlay(testMode);
+			
 		}
 		catch(std::exception& e){
 			process = false;
@@ -198,11 +199,11 @@ void roundPlay(bool testMode){
 	do {
 		// Tile-taking phase
 		firstPlayer = gameEngine->startTurn(firstPlayer);
-
+		
 		// Update game status
-		gameContinue = (!testMode && gameRound < 20);
-		testContinue = (testMode && gameRound < 20 && gameEngine->isTesting());
-
+		gameContinue = (!testMode && gameRound < DEFAULT_ROUND);
+		testContinue = (testMode && gameRound < DEFAULT_ROUND && gameEngine->isTesting());
+		
 		// Wall-tiling phase, Score-update phase, Factory-reset phase, unless finish testing
 		if(!gameEngine->hasTiles()){
 			gameEngine->endRound();
@@ -219,7 +220,6 @@ void testGame(std::string fileName){
 	try{
 		gameEngine->initGame(true,&fileName, 0);
 		roundPlay(testMode);
-		
 		// Print result
 		gameEngine->printFactories();
 		std::cout<<std::endl;

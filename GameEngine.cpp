@@ -13,7 +13,7 @@ GameEngine::~GameEngine(){
     delete tileBag;
 
     // Delete factories
-    for(Factory* factory:factories){
+    for(BST_factory* factory:factories){
         delete factory;
     }
     //delete factories;
@@ -25,7 +25,7 @@ GameEngine::~GameEngine(){
     delete loadList;
 }
 
-void GameEngine::initGame(bool testMode, std::string* fileName, int seed){
+void GameEngine::initGame(bool testMode, std::string* fileName, unsigned int seed){
     std::string inputLine;
     seedNum = seed;
     // Setting mode
@@ -56,18 +56,18 @@ void GameEngine::initGame(bool testMode, std::string* fileName, int seed){
 
     // Initialize factories
     for(int i = 0; i != DEFAULT_FACTORIES; ++i){
-        factories.push_back(new Factory());
+        factories.push_back(new BST_factory());
     }
     // Set factories
     resetFactories();
 }
 
 void GameEngine::resetFactories(){
-    factories[0]->addTile(FIRST_PLAYER);
+    factories[0]->add(FIRST_PLAYER);
      
     for(unsigned int factoryIndex = 1; factoryIndex != factories.size(); ++factoryIndex){
         for(int i = 0; i != TILES_IN_FACTORY; ++i){
-            factories[factoryIndex]->addTile(tileBag->get(0));
+            factories[factoryIndex]->add(tileBag->get(0));
             tileBag->removeFront();
         }
     }
@@ -89,9 +89,10 @@ int GameEngine::startTurn(int firstPlayer){
         loadMode = (loadLine!=loadList->size());
 
         // Hide game display when load game
+        
         if(!loadMode){
             std::cout<<"TURN FOR PLAYER: "<<player->getName()<<std::endl;
-
+            
             // Print the factories
             printFactories();
             std::cout<<std::endl;   
@@ -110,19 +111,20 @@ int GameEngine::startTurn(int firstPlayer){
             try{
                 // Enter the command
                 processInput(player);
-
-                // Take tiles from the factory
-                std::vector<Tile> tiles = takeTiles(factoryIndex,tile);
-
-                // Check first-player marker
-                for(Tile tile:tiles){
-                    if(tile==FIRST_PLAYER){
-                        returnFirstPlayer = currentPlayer;
+                if(process) {
+                    // Take tiles from the factory
+                    std::vector<Tile> tiles = takeTiles(factoryIndex,tile);
+                    
+                    // Check first-player marker
+                    for(Tile tile:tiles){
+                        if(tile==FIRST_PLAYER){
+                            returnFirstPlayer = currentPlayer;
+                        }
                     }
+                    
+                    // Put tiles to player's pattern
+                    player->getMosaic()->setPattern(tiles,patternIndex);
                 }
-
-                // Put tiles to player's pattern
-                player->getMosaic()->setPattern(tiles,patternIndex);
                 
             } catch(std::exception& e){
                 process = false;
@@ -165,13 +167,12 @@ void GameEngine::endRound(){
         }
     }
     if(tileBag->size() == 0 && seedNum > 0) {
-        std::cout << "refill tile bag processing..." << std::endl;
+        std::cout << "Refill tile bag processing..." << std::endl;
         std::vector<Tile> randomizedBoxLid = shuffledTileBag(boxLid, seedNum);
         for(Tile tile : randomizedBoxLid){
             tileBag->addBack(tile);
         }
-        std::cout << "refill completed!" << std::endl;
-        std::cout << "Tilebag size: " << tileBag->size() << std::endl;
+        std::cout << "Refill completed!" << std::endl;
     }
 }
 
@@ -216,7 +217,7 @@ void GameEngine::resetGame(){
     players.clear();
 
     // Reset the factories
-    for(Factory* factory:factories){
+    for(BST_factory* factory : factories){
         delete factory;
     }
     factories.clear();
@@ -226,13 +227,13 @@ void GameEngine::resetGame(){
 
 void GameEngine::printFactories(){
     std::cout<<"Factories:"<<std::endl;
-    for(unsigned int i = 0; i != factories.size(); ++i){
-        std::cout<<i<<": ";
-        for(Tile tile:*(factories.at(i)->getAllTiles())){
-            std::cout<<convertToChar(tile)<<" ";
+        int count = 0;
+        for(BST_factory* factory : factories) {
+            std::cout<<count<<": ";
+            factory->dfs();
+            count++;
         }
-        std::cout<<std::endl;   
-    }
+        std::cout<<std::endl;
 }
 
 void GameEngine::printMosaic(Player* player){
@@ -275,7 +276,7 @@ bool GameEngine::isTesting(){
 
 bool GameEngine::hasTiles(){
     bool hasTiles = false;
-    for(Factory* factory:factories){
+    for(BST_factory* factory : factories){
         if(!factory->isEmpty()){
             hasTiles = true;
         }
@@ -287,37 +288,30 @@ bool GameEngine::hasTiles(){
 
 std::vector<Tile> GameEngine::takeTiles(unsigned int factoryIndex, Tile tile){
     std::vector<Tile> returnTiles;
-    Factory* factory = factories.at(factoryIndex);
-    Factory* centre = factories.at(0);
-    
-    for(unsigned int i = 0; i != factory->size(); ++i){
-
-        // When the tile in factory is what player want
-        if(factory->getTile(i)==tile){
-            returnTiles.push_back(factory->getTile(i));
-
-            // Remove the tile from the centre factory
-            if(factoryIndex==0){
-                centre->getAllTiles()->erase(centre->getAllTiles()->begin()+i);
-                --i;
+    BST_factory* factory = factories.at(factoryIndex);
+    BST_factory* centre = factories.at(0);
+    int removeCounts = 0;
+        if(factoryIndex == 0) {
+            removeCounts = centre->remove(tile);
+            for(int i = 0; i < removeCounts; i++) {
+                returnTiles.push_back(tile);
             }
+            if(centre->contains(FIRST_PLAYER)) {
+                returnTiles.push_back(FIRST_PLAYER);
+                centre->remove(FIRST_PLAYER);
+            }
+
+        } else {
             
-        // When the factory is not the centre factory and the tile is not what player want.
-        } else if(factoryIndex!=0){
-            centre->addTile(factory->getTile(i));
-
-        // When the factory is the centre factory and the first-player marker has not been taken
-        } else if(factoryIndex==0&&centre->getTile(0)==FIRST_PLAYER){
-            returnTiles.push_back(centre->getTile(0));
-            centre->getAllTiles()->erase(centre->getAllTiles()->begin());
-            --i;
+            removeCounts = factory->remove(tile);
+            
+            for(int i = 0; i < removeCounts; i++) {
+                returnTiles.push_back(tile); 
+            }
+            factory->remove(tile);
+            factory->addRestTileToCenter(factory->getRoot(), centre);
+            factory->clear();
         }
-    }
-
-    // Clear the factory if it is not the centre factory
-    if(factoryIndex!=0){
-        factory->clearFactory();
-    }
 
     return returnTiles;
 }
@@ -332,9 +326,7 @@ void GameEngine::updateScore(Player* player){
 }
 
 void GameEngine::recycleTiles(Player* player){
-    std::cout << "seed is+++++++++++++++: " << seedNum << std::endl;
     std::vector<Tile> abandonList = player->getMosaic()->getAbandonList();
-    std::cout << "Tiles recycled: ";
     for(Tile abandonTile:abandonList){
         if(seedNum > 0) {
             boxLid.push_back(abandonTile);
@@ -342,12 +334,9 @@ void GameEngine::recycleTiles(Player* player){
         else {
             tileBag->addBack(abandonTile);
         }
-        std::cout << convertToChar(abandonTile);
-        
-        
     }
-    std::cout << std::endl;
-    std::cout << "recycle complete, box lid has: " << boxLid.size() << " tiles" << std::endl;
+    std::cout << "tile Bag Size: " << tileBag->size() << std::endl;
+    std::cout << "BoxLid Size: " << boxLid.size() << std::endl;
 }
 
 void GameEngine::processInput(Player* player){
@@ -384,8 +373,17 @@ void GameEngine::processInput(Player* player){
                 throw std::out_of_range("Invalid pattern line - index out of range");
             }
 
+          else {
+                if (!factories.at(factoryIndex)->contains(tile)) {
+                    throw std::invalid_argument("Invalid Input - Factory has no this type of tiles");
+                }
+
+                if (tile == FIRST_PLAYER){
+                    throw std::invalid_argument("Invalid tile - Cannot take first-player marker");
+                }
+
             // If the chosen pattern line is not the floor 
-            else if (patternIndex!=ROW+1){
+            if (patternIndex!=ROW+1){
                 if(player->getMosaic()->getPattern()->getLastTile(patternIndex)!=NO_TILE&&
                     player->getMosaic()->getPattern()->getLastTile(patternIndex)!=tile){
                     throw std::invalid_argument("Invalid pattern line - pattern line must have tiles with same color");
@@ -395,22 +393,17 @@ void GameEngine::processInput(Player* player){
                 } 
                 else if (player->getMosaic()->getPattern()->getFirstTile(patternIndex)!=NO_TILE){
                     throw std::invalid_argument("Invalid pattern line - pattern line has been full");
-                } 
-                else if (tile == FIRST_PLAYER){
-                    throw std::invalid_argument("Invalid tile - Cannot take first-player marker");
-                }
-                else if (!factories.at(factoryIndex)->find(tile)) {
-                    throw std::invalid_argument("Invalid Input - Factory has no this type of tiles");
                 }
                 else {
                     process = true;
                     inputList->push_back(input);
                 }
-            } 
+            }
             else {
                 process = true;
                 inputList->push_back(input);
-            }
+             }
+          }
         } catch(std::out_of_range& e){
             throw e;
         } catch(std::invalid_argument& e){
@@ -592,7 +585,7 @@ void GameEngine::checkLoad(){
 }
 
 template <class T>
-T GameEngine::shuffledTileBag(T tiles, int seed) {
+T GameEngine::shuffledTileBag(T tiles, unsigned int seed) {
     shuffle(tiles.begin(), tiles.end(), std::default_random_engine(seed));
     return tiles;
 }

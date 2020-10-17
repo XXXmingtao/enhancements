@@ -5,6 +5,7 @@
 #include "Type.h"
 #include "TileBag.h"
 #include "Factory.h"
+#include "BST_factory.h"
 
 #include <exception>
 #include <stdexcept>
@@ -22,7 +23,7 @@ public:
     ~GameEngine();
 
     // Initialize factories and tile bags
-    void initGame(bool testMode, std::string* fileName, int seed);
+    void initGame(bool testMode, std::string* fileName, unsigned int seed);
     // reset factories
     void resetFactories();
     // Perform the tile-taking stage for each player in turn until no factories have tiles.
@@ -46,7 +47,7 @@ public:
 
 private:
     std::vector<Player*> players;
-    std::vector<Factory*> factories;
+    std::vector<BST_factory*> factories;
     std::vector<Tile> boxLid;
     TileBag* tileBag;
     unsigned int factoryIndex;
@@ -58,7 +59,7 @@ private:
     unsigned int loadLine;
     bool loadMode;
     bool testMode;
-    int seedNum;
+    unsigned int seedNum;
 
     // Tile-taking stage, take one type of tiles from one factory, the rest of tiles will be sent to the centre factory.
     std::vector<Tile> takeTiles(unsigned int factoryIndex, Tile tile);
@@ -84,7 +85,7 @@ private:
     void checkLoad();
     // Shuffle the tile bag
     template <class T>
-    T shuffledTileBag(T tiles, int seed);
+    T shuffledTileBag(T tiles, unsigned int seed);
 };
 
 #endif // GAME_ENGINE
