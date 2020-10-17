@@ -335,8 +335,6 @@ void GameEngine::recycleTiles(Player* player){
             tileBag->addBack(abandonTile);
         }
     }
-    std::cout << "tile Bag Size: " << tileBag->size() << std::endl;
-    std::cout << "BoxLid Size: " << boxLid.size() << std::endl;
 }
 
 void GameEngine::processInput(Player* player){
