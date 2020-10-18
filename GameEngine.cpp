@@ -582,7 +582,7 @@ void GameEngine::checkLoad(){
     }
 }
 
-template <class T>
+template <typename T>
 T GameEngine::shuffledTileBag(T tiles, unsigned int seed) {
     shuffle(tiles.begin(), tiles.end(), std::default_random_engine(seed));
     return tiles;

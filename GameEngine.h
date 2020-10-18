@@ -84,7 +84,7 @@ private:
     // Check whether the loading is complete
     void checkLoad();
     // Shuffle the tile bag
-    template <class T>
+    template <typename T>
     T shuffledTileBag(T tiles, unsigned int seed);
 };
 
