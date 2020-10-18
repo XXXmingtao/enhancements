@@ -4,7 +4,6 @@
 #include "Player.h"
 #include "Type.h"
 #include "TileBag.h"
-#include "Factory.h"
 #include "BST_factory.h"
 
 #include <exception>
